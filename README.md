@@ -7,7 +7,7 @@
 
 <hr/>
 
-![Pinata](https://cdn.pixabay.com/photo/2013/07/12/14/08/drawing-pin-147814_960_720.png)
+<img alt="Pinata" height="200" src="https://cdn.pixabay.com/photo/2013/07/12/14/08/drawing-pin-147814_960_720.png" width="200"/>
 
 <hr/>
 

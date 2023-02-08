@@ -3,7 +3,8 @@ part of pinata;
 /// ## Pinata Key Access
 /// Enum based constructed class that serves as
 /// permission or access negotiation to Pinata
-/// api keys.
+/// api keys.  Key Access describes what Pinata
+/// cloud api features a pinata key has access to.
 /// <br/><br/>
 ///
 /// ```dart

@@ -171,5 +171,5 @@ void main() async {
   print(await pin.update(name: 'New Pin'));
 }
 ```
-##### This documentation and project is still under development yet, fully active and safe to use
+##### This documentation and project is still under development. Yet fully active and safe to use
 ### Thanks.

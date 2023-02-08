@@ -1,23 +1,23 @@
 part of pinata;
 
-class PinSlug {
+class PinLink {
   //...Fields
   final int byteSize;
   final String address;
   final DateTime stamp;
   final bool? isDuplicate;
 
-  PinSlug({
+  PinLink({
     required this.byteSize,
     required this.address,
     required this.stamp,
     this.isDuplicate,
   });
 
-  factory PinSlug._fromJson(data) {
+  factory PinLink._fromJson(data) {
     //...
     assert(data is Map<String, dynamic>);
-    return PinSlug(
+    return PinLink(
       byteSize: data['PinSize'],
       address: data['IpfsHash'],
       stamp: DateTime.parse(data['Timestamp']),
@@ -26,12 +26,12 @@ class PinSlug {
   }
 
   //...Getters
-  get url => 'https://gateway.pinata.cloud/ipfs/$address';
+  get contentURL => '$GatewayCloudURL/ipfs/$address';
 
   //...Methods
   @override
   String toString() {
-    return 'PinSlug(\n'
+    return 'PinLink(\n'
         '\tbyteSize: $byteSize,\n'
         '\taddress: $address,\n'
         '\tstamp: ${stamp.toIso8601String()},\n'

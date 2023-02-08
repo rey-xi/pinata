@@ -58,7 +58,7 @@ extension on Object? {
   }
 }
 
-Map<String, Object?> _decode(data) {
+Map<String, Object?> _de(data) {
   //...
   if (data is Map) {
     final map = data.de as Map<Object?, Object?>;

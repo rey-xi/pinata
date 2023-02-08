@@ -83,28 +83,28 @@ Pinata interface for interacting with Pinata gateway. Contains two constructors
 [viaJWT] which takes a required [JWT]; and [viaParts] which takes required API
 key and API Secret. Pinata houses all functions provided from Pinata API Gateway.
 
-Pinata Constructors
-- Pinata.viaJWT()
-- Pinata.viaParts()
+##### Pinata Constructors
+    - Pinata.access()
+    - Pinata.viaJWT()
+    - Pinata.viaParts()
 
-Pinata Interface
+##### PinataAPI 
+    - log
+    - apiKeys
+    - pinJobs
+    - pins
+    - apiAeysAt()
+    - queryPins()
+    - loadPin()
+    - pinFile()
+    - pinDirectory()
+    - pinBytes()
+    - pinJson()
+    - createKey()
 
-  - **log**
-     This Getter that ensures 
+More Detailed Documentation will be added here soon... However, The package
+source code is well documented and is enough to get you started.
 
-  - pins
-  - pinJobs
-  - descendants
-  - queryPins()
-  - pinFile()
-  - pinDirectory()
-  - pinBytes()
-  - pinJson()
-  - pinByID()
-  - createDescendant()
-  - revokeDescendant()
-
-More Detailed Documentation coming soon.
 
 ## Working Example:
 ```dart

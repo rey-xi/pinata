@@ -1,22 +1,35 @@
 part of pinata;
 
+/// ## Pinata Key Access
+/// Enum based constructed class that serves as
+/// permission or access negotiation to Pinata
+/// api keys.
+/// <br/><br/>
+///
+/// ```dart
+/// final key = adminKey.createKey(
+///   name: 'My new key',
+///   access: [KeyAccess.admin],
+/// )
+/// ```
 class KeyAccess {
   //...Fields
-  final Iterable<String> _x;
+  final Iterable<String> _codes;
+  final String _name;
 
-  const KeyAccess._(this._x);
+  const KeyAccess._(this._codes, [this._name = 'Key ACCESS']);
 
   static List<KeyAccess> _fromJson(data) {
     //...
     if (data is! Map) return <KeyAccess>[];
     final endP = data['endpoints'] ?? {'': ''};
     return [
-      if (data['admin'] ?? false) adminAccess,
+      if (data['admin'] ?? false) admin,
       if (endP['data']?['pinList'] ?? false) pins,
       if (endP['data']?['userPinnedDataTotal'] ?? false) log,
       if (endP['pinning']?['hashMetadata'] ?? false) updatePinMeta,
       if (endP['pinning']?['hashPinPolicy'] ?? false) updatePinPolicy,
-      if (endP['pinning']?['pinByHash'] ?? false) pinByID,
+      if (endP['pinning']?['pinByHash'] ?? false) pinFromAddress,
       if (endP['pinning']?['pinFileToIPFS'] ?? false) pinFile,
       if (endP['pinning']?['pinJSONToIPFS'] ?? false) pinJson,
       if (endP['pinning']?['pinJobs'] ?? false) pinJobs,
@@ -25,53 +38,142 @@ class KeyAccess {
     ];
   }
 
-  static const log = KeyAccess._(['&log']);
+  /// Access to fetch key logs from Pinata cloud
+  /// gateway. <br/><br/>
+  ///
+  /// Gives access to:
+  /// - [_PinataAPI.log]
+  ///
+  static const log = KeyAccess._(['&log'], 'Log');
 
-  static const pins = KeyAccess._(['&pins']);
+  /// Access to fetch active pins from Pinata cloud
+  /// gateway.
+  ///
+  /// Gives access to:
+  /// - [_PinataAPI.pins]
+  /// - [_PinataAPI.queryPins]
+  ///
+  static const pins = KeyAccess._(['&pins'], 'Fetch Pins');
 
-  static const pinFile = KeyAccess._(['&pinFile']);
+  /// Access to pins files, directories and files
+  /// byte data to Pinata cloud gateway. <br/><br/>
+  ///
+  /// Gives access to:
+  /// - [_PinataAPI.pinFile]
+  /// - [_PinataAPI.pinDirectory]
+  /// - [_PinataAPI.pinBytes]
+  ///
+  static const pinFile = KeyAccess._(['&pinFile'], 'Pin File');
 
-  static const pinJson = KeyAccess._(['&pinJson']);
+  /// Access to pins json, array and objet to Pinata
+  /// cloud gateway. <br/><br/>
+  ///
+  /// Gives access to:
+  /// - [_PinataAPI.pinJson]
+  /// - [_PinataAPI.pinArray]
+  /// - [_PinataAPI.pinValue]
+  ///
+  static const pinJson = KeyAccess._(['&pinJson'], 'Pin Json');
 
-  static const pinByID = KeyAccess._(['&pinByID']);
+  /// Access to pin document from a given Pinata
+  /// address to another address on Pinata cloud
+  /// gateway. <br/><br/>
+  ///
+  /// Gives access to:
+  /// - [_PinataAPI.pinFromAddress]
+  ///
+  static const pinFromAddress = KeyAccess._(['&pinByID'], 'Pin From Address');
 
-  static const unpin = KeyAccess._(['&unpin']);
+  /// Access to unpin or delete pinned documents
+  /// on Pinata cloud gateway. <br/><br/>
+  ///
+  /// Gives access to:
+  /// - [Pin.unpin]
+  ///
+  static const unpin = KeyAccess._(['&unpin'], 'Unpin');
 
-  static const pinJobs = KeyAccess._(['&pinJobs']);
+  /// Access to fetch pending pin jobs on Pinata
+  /// cloud gateway. <br/><br/>
+  ///
+  /// Gives access to:
+  /// - [_PinataAPI.pinJobs]
+  ///
+  static const pinJobs = KeyAccess._(['&pinJobs'], 'Pin Jobs');
 
-  static const pinPolicy = KeyAccess._(['&pinPolicy']);
+  /// Access to fetch pin policies along with pins
+  /// on Pinata cloud gateway. <br/><br/>
+  ///
+  /// Gives access to:
+  /// - [_PinataAPI.pins]
+  ///
+  static const pinPolicy = KeyAccess._(['&pinPolicy'], 'Pin Policy');
 
-  static const updatePinMeta = KeyAccess._(['&xPinMeta']);
+  /// Access to update pinned documents meta data
+  /// on Pinata cloud gateway. <br/><br/>
+  ///
+  /// Gives access to:
+  /// - [Pin.update]
+  ///
+  static const updatePinMeta = KeyAccess._(['&xPinMeta'], 'Update Pin Meta');
 
-  static const updatePinPolicy = KeyAccess._(['&xPinPolicy']);
+  /// Access to update pinned documents policy
+  /// on Pinata cloud gateway. <br/><br/>
+  ///
+  /// Gives access to:
+  /// - [Pin.update]
+  ///
+  static const updatePinPolicy = KeyAccess._(['&xPinPolicy'], 'Update Pin Policy');
 
-  static final adminAccess = KeyAccess._([
-    '&admin',
-    '$dataAccess',
-    '$pinningAccess',
-  ]);
+  /// Admin access to pin, unpin, update, query and
+  /// manage documents on Pinata cloud gateway. Also
+  /// gives access to create, revoke and query other
+  /// api keys in it's host node. <br/><br/>
+  ///
+  /// Gives extra access to:
+  /// - [_PinataAPI.createKey]
+  /// - [_PinataAPI.apiKeys]
+  /// - [_PinataAPI.apiKeysAt]
+  /// - [PinataKey.revokeBy]
+  ///
+  static final admin = KeyAccess._(['&admin'], 'Admin');
 
-  static final dataAccess = KeyAccess._([
+  /// Shortcut Access to give access to all data
+  /// access:
+  /// - [KeyAccess.log]
+  /// - [KeyAccess.pins]
+  ///
+  static final data = KeyAccess._([
     '$log',
     '$pins',
-  ]);
+  ], 'Data');
 
-  static final pinningAccess = KeyAccess._([
+  /// Shortcut Access to give access to all data
+  /// access:
+  /// - [KeyAccess.pinFile]
+  /// - [KeyAccess.pinJson]
+  /// - [KeyAccess.pinFromAddress]
+  /// - [KeyAccess.updatePinMeta]
+  /// - [KeyAccess.pinJobs]
+  /// - [KeyAccess.unpin]
+  /// - [KeyAccess.updatePinPolicy]
+  /// - [KeyAccess.pinPolicy]
+  ///
+  static final pinning = KeyAccess._([
     '$pinFile',
     '$pinJson',
-    '$pinByID',
+    '$pinFromAddress',
     '$updatePinMeta',
     '$pinJobs',
     '$unpin',
     '$updatePinPolicy',
     '$pinPolicy',
-  ]);
+  ], 'Pinning');
 
   //...Methods
-  Map<String, Object> toJson() {
+  Map<String, Object> _toJson() {
     //...
     bool f(x) => '$this'.contains(x); //
-    return f('$adminAccess')
+    return f('$admin')
         ? {'admin': true}
         : {
             "endpoints": {
@@ -82,7 +184,7 @@ class KeyAccess {
               "pinning": {
                 "hashMetadata": f('$updatePinMeta'),
                 'hashPinPolicy': f('$updatePinPolicy'),
-                "pinByHash": f('$pinByID'),
+                "pinByHash": f('$pinFromAddress'),
                 "pinFileToIPFS": f('$pinFile'),
                 "pinJSONToIPFS": f('$pinJson'),
                 "pinJobs": f('$pinJobs'),
@@ -93,6 +195,13 @@ class KeyAccess {
           };
   }
 
+  /// Check if this key access contains [access].
+  /// returns same value as:
+  /// ```dart
+  /// '$this'.contains('$access');
+  /// ```
+  bool contains(KeyAccess access) => '$this'.contains('$access');
+
   @override
-  String toString() => _x.join();
+  String toString() => _codes.join();
 }

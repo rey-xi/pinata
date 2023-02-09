@@ -72,7 +72,6 @@ class KeyAccess {
   /// Gives access to:
   /// - [_PinataAPI.pinJson]
   /// - [_PinataAPI.pinArray]
-  /// - [_PinataAPI.pinValue]
   ///
   static const pinJson = KeyAccess._(['&pinJson'], 'Pin Json');
 
@@ -113,7 +112,7 @@ class KeyAccess {
   /// on Pinata cloud gateway. <br/><br/>
   ///
   /// Gives access to:
-  /// - [Pin.update]
+  /// - [Pin.updateMeta]
   ///
   static const updatePinMeta = KeyAccess._(['&xPinMeta'], 'Update Pin Meta');
 
@@ -121,7 +120,7 @@ class KeyAccess {
   /// on Pinata cloud gateway. <br/><br/>
   ///
   /// Gives access to:
-  /// - [Pin.update]
+  /// - [Pin.updateMeta]
   ///
   static const updatePinPolicy = KeyAccess._(['&xPinPolicy'], 'Update Pin Policy');
 
@@ -133,7 +132,7 @@ class KeyAccess {
   /// Gives extra access to:
   /// - [_PinataAPI.createKey]
   /// - [_PinataAPI.apiKeys]
-  /// - [_PinataAPI.apiKeysAt]
+  /// - [_PinataAPI.queryApiKeys]
   /// - [PinataKey.revokeBy]
   ///
   static final admin = KeyAccess._(['&admin'], 'Admin');

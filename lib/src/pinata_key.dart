@@ -25,6 +25,9 @@ class PinataKey {
   /// Pinata secret key - more like password
   final String secret;
 
+  /// Pinata JWT -  direct authorization crypto string
+  final String jWT;
+
   /// Pinata api key user's serial identity
   final String userID;
 
@@ -56,6 +59,7 @@ class PinataKey {
     required this.name,
     required this.key,
     required this.secret,
+    required this.jWT,
     required this.userID,
     required this.access,
     required this.createdAt,
@@ -73,14 +77,48 @@ class PinataKey {
       name: data['name'] ?? 'One time key',
       key: data['key'],
       secret: data['secret'],
+      jWT: data['JWT'] ?? '',
       userID: data['user_id'],
       uses: data['uses'],
       revoked: data['revoked'] ?? false,
       maxUses: data['max_uses'],
       access: KeyAccess._fromJson(data['scopes']),
-      createdAt: DateTime.tryParse(data['createdAt']),
-      updatedAt: DateTime.tryParse(data['createdAt']),
+      createdAt: DateTime.tryParse(data['createdAt'] ?? ''),
+      updatedAt: DateTime.tryParse(data['updatedAt'] ?? ''),
     );
+  }
+
+  Map<String, dynamic> _toJson() {
+    return {
+      'id': serial,
+      'name': name,
+      'key': key,
+      'secret': secret,
+      'JWT': jWT,
+      'user_id': userID,
+      'uses': uses,
+      'revoked': revoked,
+      'max_uses': maxUses,
+      'scopes': access.join(),
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
+    };
+  }
+
+  /// Parse Pinata key data from string. Work's entirely
+  /// seamlessly and without network. This is the undo
+  /// call for [PinataKey.toString].
+  /// <br/><br/>
+  ///
+  /// ```dart
+  /// var key = Pinata.parse('SOURCE');
+  /// ```
+  factory PinataKey.parse(String source) {
+    source = source.replaceAll(RegExp(r'\s+'), '');
+    final validKey = RegExp(r'^PinataKey\((.+)\)$');
+    final match = validKey.matchAsPrefix(source);
+    final data = json.decode(match?.group(1) ?? '{}');
+    return PinataKey._fromJson(data);
   }
 
   /// Decode [_PinataAPI] from slug. Exposes Pinata
@@ -92,6 +130,10 @@ class PinataKey {
   ///   slug.api.pinFile(File('PATH'));
   /// ```
   Pinata get api {
+    //...
+    if (jWT.isNotEmpty) {
+      return Pinata.viaJWT(jWT: jWT);
+    }
     return Pinata.viaPair(
       name: name,
       apiKey: key,
@@ -131,18 +173,6 @@ class PinataKey {
 
   @override
   String toString() {
-    return 'PinataKey(\n'
-        '\tserial: $serial,\n'
-        '\tname: $name,\n'
-        '\tkey: $key,\n'
-        '\tsecret: $secret,\n'
-        '\tuserID: $userID,\n'
-        '\taccess: $access,\n'
-        '\tcreatedAt: $createdAt,\n'
-        '\tupdatedAt: $updatedAt,\n'
-        '\trevoked: $revoked,\n'
-        '\tmaxUses: $maxUses,\n'
-        '\tuses: $uses,\n'
-        ')';
+    return 'PinataKey(${json.encode(_toJson())})';
   }
 }

@@ -44,18 +44,38 @@ class PinJob {
     );
   }
 
+  /// Parse Pin job data from string. Work's entirely
+  /// seamlessly and without network. This is the undo
+  /// call for [PinJob.toString].
+  /// <br/><br/>
+  ///
+  /// ```dart
+  /// var key = Pinata.parse('SOURCE');
+  /// ```
+  factory PinJob.parse(String source) {
+    source = source.replaceAll(RegExp(r'\s+'), '');
+    final validKey = RegExp(r'^PinJob\((.+)\)$');
+    final match = validKey.matchAsPrefix(source);
+    final data = json.decode(match?.group(1) ?? '{}');
+    return PinJob._fromJson(data);
+  }
+
+  Map<String, dynamic> _toJson() {
+    return {
+      'id': serial,
+      'status': status.code,
+      'name': name,
+      'ipfs_pin_hash': address,
+      'date_queued': dateQueued.toIso8601String(),
+      'keyvalues': meta.en ?? {},
+      'host_nodes': hostNodes,
+      'pin_policy': pinPolicy,
+    };
+  }
+
   @override
   String toString() {
-    return 'PinJob(\n'
-        '\tserial: $serial,\n'
-        '\taddress: $address,\n'
-        '\tdateQueued: ${dateQueued.toIso8601String()},\n'
-        '\tstatus: ${status.code},\n'
-        '\tname: $name,\n'
-        '\tmeta: $meta,\n'
-        '\thostNodes: $hostNodes,\n'
-        '\tpinPolicy: $pinPolicy,\n'
-        ')';
+    return 'PinJob(\n${json.encode(_toJson())})';
   }
 }
 

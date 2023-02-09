@@ -41,10 +41,40 @@ class _PinataAPI {
         _login = login;
 
   //...Getters
+  /// Return a [PinataKey] interpretation of pinata
+  /// api. Won't say it's that useful, but it'll come
+  /// in handy sometimes.
+  /// <br/><br/>
+  ///
+  /// No [KeyAccess] required.
+  /// <br/><br/>
+  ///
+  /// ```dart
+  /// var key = pinata.self;
+  /// ```
+  PinataKey get self {
+    //...
+    trim(jWT) => jWT?.replaceFirst('Bearer ', '');
+    return PinataKey._(
+      serial: _login['pinata_api_key'] ?? '',
+      name: _login['name'] ?? 'One time key',
+      key: _login['pinata_api_key'] ?? '',
+      secret: _login['pinata_secret_api_key'] ?? '',
+      jWT: trim(_login['Authorization']) ?? '',
+      access: [KeyAccess.pinning, KeyAccess.data],
+      userID: '',
+      uses: 0,
+      revoked: false,
+      maxUses: null,
+      createdAt: null,
+      updatedAt: null,
+    );
+  }
+
   /// Fetch all Pinata API keys connected to the user
   /// of this [_PinataAPI]. Returned [apiKeys] is
   /// limited to **10 keys** max *(Pagination)*. Use
-  /// [apiKeysAt] to paginate through all available
+  /// [queryApiKeys] to paginate through all available
   /// keys.
   /// <br/><br/>
   ///
@@ -169,47 +199,6 @@ class _PinataAPI {
   }
 
   //...Methods
-  /// Query all Pinata API keys connected to the user
-  /// of this [_PinataAPI]. This operation requires
-  /// [KeyAccess.admin]. Calling this method without
-  /// admin access will throw an exception - [    ]
-  /// [PinataException]. Returned [apiKeys] start's
-  /// at [offset] and is limited to **10 keys** max
-  /// *(Pagination)*. Use [apiKeysAt] to paginate
-  /// through all available  keys.
-  /// <br/><br/>
-  ///
-  /// Requires [KeyAccess.admin].
-  /// if access is missing, throws [KeyAccessException]
-  /// <br/><br/>
-  ///
-  /// ```dart
-  /// var keys = await pinata.apiKeysAt(20);
-  /// ```
-  Future<List<PinataKey>> apiKeysAt(int offset) async {
-    //...
-    final query = '?offset=$offset';
-    final request = Request(
-      'GET',
-      Uri.parse('$APICloudURL/users/apiKeys/$query'),
-    );
-    request.headers.addAll({
-      'Content-Type': 'application/json',
-      ..._login,
-    });
-    final overload = await request.send();
-    final response = await Response.fromStream(overload);
-    if (response.statusCode != 200) {
-      throw PinataException._(
-        statusCode: response.statusCode,
-        reasonPhrase: response.reasonPhrase,
-      );
-    }
-    final data = json.decode(response.body);
-    final array = data['keys'] as List? ?? [];
-    return array.map(PinataKey._fromJson).toList();
-  }
-
   /// Fetch a Pin from IPFS Network searching via a
   /// valid [address]. If Address is not valid or no
   /// Pin was found with [address], [PinataException]
@@ -223,13 +212,13 @@ class _PinataAPI {
   /// ```dart
   /// var pin = await pinata.loadPin('ADDRESS');
   /// ```
-  Future<Pin> getPinAt(String address) async {
+  Future<Pin> getPin(String address) async {
     //...
     final regex = RegExp(r'(https?://)?((gateway\.pinata\.'
         r'cloud/|/)?ipfs|/)?(\w+)'); //...Resolve Address
     final hash = regex.matchAsPrefix(address)?.group(4);
     final pins = await queryPins(address: hash);
-    if (pins.isEmpty || pins.length > 1) {
+    if (pins.isEmpty) {
       throw PinataException._(
         statusCode: 404,
         reasonPhrase: 'Pin not found: '
@@ -252,13 +241,13 @@ class _PinataAPI {
   /// ```dart
   /// var pin = await pinata.loadPin('ADDRESS');
   /// ```
-  Future<PinJob> getPinJobAt(String address) async {
+  Future<PinJob> getPinJob(String address) async {
     //...
     final regex = RegExp(r'(https?://)?((gateway\.pinata\.'
         r'cloud/|/)?ipfs|/)?(\w+)'); //...Resolve Address
     final hash = regex.matchAsPrefix(address)?.group(4);
     final pins = await queryPinJobs(address: hash);
-    if (pins.isEmpty || pins.length > 1) {
+    if (pins.isEmpty) {
       throw PinataException._(
         statusCode: 404,
         reasonPhrase: 'Pin not found: '
@@ -266,6 +255,49 @@ class _PinataAPI {
       );
     }
     return pins.first;
+  }
+
+  /// Query all Pinata API keys connected to the user
+  /// of this [_PinataAPI]. This operation requires
+  /// [KeyAccess.admin]. Calling this method without
+  /// admin access will throw an exception - [    ]
+  /// [PinataException]. Returned [apiKeys] start's
+  /// at [offset] and is limited to **10 keys** max
+  /// *(Pagination)*. Use [queryApiKeys] to paginate
+  /// through all available  keys.
+  /// <br/><br/>
+  ///
+  /// Requires [KeyAccess.admin].
+  /// if access is missing, throws [KeyAccessException]
+  /// <br/><br/>
+  ///
+  /// ```dart
+  /// var keys = await pinata.apiKeysAt(20);
+  /// ```
+  Future<List<PinataKey>> queryApiKeys({
+    required int offset,
+  }) async {
+    //...
+    final query = '?offset=$offset';
+    final request = Request(
+      'GET',
+      Uri.parse('$APICloudURL/users/apiKeys/$query'),
+    );
+    request.headers.addAll({
+      'Content-Type': 'application/json',
+      ..._login,
+    });
+    final overload = await request.send();
+    final response = await Response.fromStream(overload);
+    if (response.statusCode != 200) {
+      throw PinataException._(
+        statusCode: response.statusCode,
+        reasonPhrase: response.reasonPhrase,
+      );
+    }
+    final data = json.decode(response.body);
+    final array = data['keys'] as List? ?? [];
+    return array.map(PinataKey._fromJson).toList();
   }
 
   /// Query for a list of all successful and active
@@ -569,6 +601,7 @@ class _PinataAPI {
     Map<String, Object>? meta,
   }) async {
     //...
+    assert(map.isNotEmpty);
     final metadata = {
       "name": name,
       "keyvalues": meta?.en ?? {},
@@ -619,48 +652,6 @@ class _PinataAPI {
     );
   }
 
-  /// Pin Object to IPFS Network. If object is Json
-  /// or array, [pinJson] and [pinArray] will be used
-  /// instead respectively. Optionally pass in [meta].
-  /// [name] is required.
-  /// <br/><br/>.
-  ///
-  /// Requires [KeyAccess.pinJson]/[KeyAccess.pinning].
-  /// if access is missing, throws [KeyAccessException]
-  /// <br/><br/>
-  ///
-  /// ```dart
-  /// var pin = await pinata.pinArray(
-  ///   [0, 'done'],
-  ///   name: 'my array',
-  /// );
-  /// ```
-  Future<PinLink> pinValue(
-    Object value, {
-    required String name,
-    Map<String, Object>? meta,
-  }) {
-    if (value is Map<String, Object>) {
-      return pinJson(
-        value,
-        name: name,
-        meta: meta,
-      );
-    }
-    if (value is Iterable<Object>) {
-      return pinArray(
-        value,
-        name: name,
-        meta: meta,
-      );
-    }
-    return pinJson(
-      {'value*': value},
-      name: name,
-      meta: meta,
-    );
-  }
-
   /// Pin a file or data that is already encoded en
   /// coded inn English.Optionally pass in [meta].
   /// [name] is required.
@@ -693,11 +684,17 @@ class _PinataAPI {
       'pinataOptions': '{"cidVersion": 1}',
       'pinataMetadata': json.encode(metadata),
     };
-    final response = await post(
+    final request = Request(
+      'PUT',
       Uri.parse('$APICloudURL/pinning/pinByHash'),
-      headers: _login,
-      body: payload,
     );
+    request.headers.addAll({
+      ..._login,
+      'Content-Type': 'application/json',
+    });
+    request.body = json.encode(payload);
+    final overload = await request.send();
+    final response = await Response.fromStream(overload);
     if (response.statusCode != 200) {
       throw PinataException._(
         statusCode: response.statusCode,
@@ -757,8 +754,10 @@ class _PinataAPI {
   }
 
   @override
-  String toString() => 'PinataAPI(\n'
-      '\tname: $_name,\n'
-      '\tlogin: $_login,\n'
-      ')';
+  String toString() {
+    return 'PinataAPI(${json.encode({
+          'name': _name,
+          'login': _login,
+        })})';
+  }
 }

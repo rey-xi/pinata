@@ -58,6 +58,6 @@ class KeyAccessException implements Exception {
   @override
   String toString() {
     return 'KeyAccessException:\t($operation)'
-        ' requires ${missingAccess._name} Access';
+        ' requires ${missingAccess.name} Access';
   }
 }

@@ -1,6 +1,6 @@
 part of pinata;
 
-extension on Object? {
+extension _HASH on Object? {
   //...Getters
   Object? get en {
     //...
@@ -56,6 +56,15 @@ extension on Object? {
     }
     return null;
   }
+}
+
+Map<String, Object?> _en(data) {
+  //...
+  if (data is Map) {
+    final map = data.en as Map<Object?, Object?>;
+    return map.map((k, v) => MapEntry('$k', v));
+  }
+  return {};
 }
 
 Map<String, Object?> _de(data) {

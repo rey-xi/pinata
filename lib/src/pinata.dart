@@ -6,6 +6,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:http/http.dart';
+import 'package:qp_xt/qp_xt.dart';
 
 part 'pinata_api.dart';
 part 'pinata_key.dart';
@@ -17,6 +18,7 @@ part 'utils/job.dart';
 part 'utils/link.dart';
 part 'utils/pin.dart';
 part 'utils/query.dart';
+part 'utils/schema.dart';
 
 const _api = 'pinata_api_key';
 const _secret = 'pinata_secret_api_key';
@@ -52,6 +54,18 @@ const _secret = 'pinata_secret_api_key';
 /// );
 /// ```
 class Pinata extends _PinataAPI {
+  //...Utility
+  static String? _gatewayID;
+
+  /// Set Pinata dedicated gateway iD to target files
+  /// via your own custom dedicated gateway for higher
+  /// speed and usage experience.
+  /// <br/><br/>
+  /// ```dart
+  /// final pinata = Pinata.gateway = 'GATEWAY_ID';
+  /// ```
+  static set gateway(String iD) => _gatewayID = iD;
+
   //...Fields
   /// Generate Pinata from [access] hash. Access hash
   /// is a map data that contains either 'Authority'

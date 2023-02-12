@@ -1,5 +1,17 @@
 part of pinata;
 
+/// ## Pin Link
+/// Pin link. A struct containing a typical
+/// pin detail abstract. A link has no definite
+/// constructor, so it can't be created locally.
+/// Pin Metas are returned during [KeyAccess.pinning]
+/// dependent services. Get [Pin] from [PinLink] via
+/// [PinLink.load].
+/// <br/><br/>
+///
+/// ```dart
+/// var pin = await pinata.loadPin('ADDRESS');
+/// ```
 class PinLink {
   //...Fields
   final int byteSize;
@@ -46,6 +58,31 @@ class PinLink {
     );
   }
 
+  //...Getters
+  /// The URL where you can locate your pin content.
+  /// Basically follows the format
+  /// ```url
+  /// https://gateway.pinata.cloud/ipfs/ADDRESS
+  /// ```
+  String get contentURL {
+    //...
+    if (Pinata._gatewayID == null) {
+      return '$GatewayCloudURL/ipfs/$address';
+    }
+    return '$DedicatedGatewayURL/ipfs/$address';
+  }
+
+  //...Methods
+  /// Retrieve String version of content from IPFS via
+  /// Pinata Gateway. Recover pin content as plain text.
+  /// <br/><br/>
+  ///
+  /// ```dart
+  /// var pin = await pinata.loadPin('ADDRESS');
+  /// return await pin.contentJson;
+  /// ```
+  Future<Pin> load(Pinata api) => api.getPin(address);
+
   /// Retrieve String version of content from IPFS via
   /// Pinata Gateway. Recover pin content as plain text.
   /// <br/><br/>
@@ -57,7 +94,7 @@ class PinLink {
   Future<String> fetchBody(Pinata api) async {
     //...
     final response = await get(
-      Uri.parse('$GatewayCloudURL/ipfs/$address'),
+      Uri.parse(contentURL),
       headers: api._login,
     );
     if (response.statusCode != 200) {
@@ -82,7 +119,7 @@ class PinLink {
     //...
     final q = RegExp(r'^"|"$');
     final response = await get(
-      Uri.parse('$GatewayCloudURL/ipfs/$address'),
+      Uri.parse(contentURL),
       headers: api._login,
     );
     if (response.statusCode != 200) {
@@ -119,32 +156,6 @@ class PinLink {
     return [];
   }
 
-  /// Retrieve bytes version of content from IPFS via
-  /// Pinata Gateway. Recovery callback for [pinBytes]
-  /// as in [_PinataAPI.pinBytes]. Also applies to files
-  /// [_PinataAPI.pinFile] and [_PinataAPI.pinDirectory]
-  /// <br/><br/>
-  ///
-  /// ```dart
-  /// var pin = await pinata.loadPin('ADDRESS');
-  /// return await pin.contentBytes;
-  /// ```
-  Future<Uint8List> fetchBytes(Pinata api) async {
-    //...
-    final response = await get(
-      Uri.parse('$GatewayCloudURL/ipfs/$address'),
-      headers: api._login,
-    );
-    if (response.statusCode != 200) {
-      throw PinataException._(
-        statusCode: response.statusCode,
-        reasonPhrase: response.reasonPhrase,
-      );
-    }
-    return response.bodyBytes;
-  }
-
-  //...Methods
   @override
   String toString() {
     return 'PinLink(${'$GatewayCloudURL/ipfs/$address,'}'

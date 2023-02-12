@@ -9,7 +9,7 @@ part of pinata;
 /// <br/><br/>
 ///
 /// ```dart
-/// var pin = await pinata.loadPin('ADDRESS');
+/// var pin = await pinata.getPin('ADDRESS');
 /// ```
 class Pin {
   //...Fields
@@ -20,7 +20,7 @@ class Pin {
   DateTime? _dateUnpinned;
   final List<dynamic> _regions;
   final Map<String, Object?> _meta;
-  final Map<String, String> _anchor;
+  final Map<String, String> _host;
 
   Pin._({
     required String name,
@@ -30,9 +30,9 @@ class Pin {
     DateTime? dateUnpinned,
     required List regions,
     Map<String, Object?> meta = const {},
-    required Map<String, String> anchor,
+    required Map<String, String> host,
   })  : _name = name,
-        _anchor = anchor,
+        _host = host,
         _dateUnpinned = dateUnpinned,
         _regions = regions,
         _meta = meta;
@@ -48,13 +48,13 @@ class Pin {
       dateUnpinned: DateTime.tryParse(data['date_unpinned'] ?? ''),
       meta: _de(data['metadata']['keyvalues']),
       regions: data['regions'],
-      anchor: Map<String, String>.from(data['cfx'] ?? {}),
+      host: Map<String, String>.from(data['cfx'] ?? {}),
     );
   }
 
   /// Parse pin data from string. Work's entirely
-  /// seamlessly and without network. This is the undo
-  /// call for [Pin.toString].
+  /// seamlessly and without network. This is the
+  /// undo call for [Pin.toString].
   /// <br/><br/>
   ///
   /// ```dart
@@ -83,8 +83,19 @@ class Pin {
   }
 
   //...Getters
+  /// Pin display name.
+  /// <br/><br/>
+  /// ***Note***
+  /// *Just a mere display name. it's not used for*
+  /// *neither pin versioning nor identification.*
   String get name => _name;
 
+  /// Pin regions.
+  /// <br/><br/>
+  /// This feature is still under development. I'm
+  /// collating more information on how it can be
+  /// best implemented for easy User and developers'
+  /// experience.
   List<dynamic> get regions => _regions;
 
   /// Sync status of pin. A status is synced if it's
@@ -95,10 +106,10 @@ class Pin {
   /// <br/><br/>
   ///
   /// ```dart
-  /// var pin = await pinata.loadPin('ADDRESS');
+  /// var pin = await pinata.getPin('ADDRESS');
   /// return pin.isSynced;
   /// ```
-  bool get isSynced => _anchor.isNotEmpty;
+  bool get isSynced => _host.isNotEmpty;
 
   /// Pin status. Always [PinStatus.unpin] unless
   /// [unpin] was the last callback on any rep of
@@ -107,12 +118,29 @@ class Pin {
   /// <br/><br/>
   ///
   /// ```dart
-  /// var pin = await pinata.loadPin('ADDRESS');
+  /// var pin = await pinata.getPin('ADDRESS');
   /// return pin.status;
   /// ```
-  PinStatus get status => dateUnpinned == null //
-      ? PinStatus.pinned
-      : PinStatus.unpinned;
+  PinStatus get status {
+    return dateUnpinned == null //
+        ? PinStatus.pinned
+        : PinStatus.unpinned;
+  }
+
+  /// Resolve pin content flow/schema.
+  /// A file system simulator that helps to group
+  /// bytes into byte sections just as folder is
+  /// to files.
+  /// <br/><br/>
+  ///
+  /// ```dart
+  /// var pin = await pinata.getPin('ADDRESS');
+  /// return await pin.skeleton;
+  /// ```
+  PinSchema get schema {
+    final li = metaAt<String>('...skeleton.io');
+    return PinSchema._parse(li?.split(',') ?? []);
+  }
 
   /// The date this pin called [unpin]. Always null
   /// unless [status] is [PinStatus.unpinned] - that
@@ -121,7 +149,7 @@ class Pin {
   /// <br/><br/>
   ///
   /// ```dart
-  /// var pin = await pinata.loadPin('ADDRESS');
+  /// var pin = await pinata.getPin('ADDRESS');
   /// return pin.dateUnpinned;
   /// ```
   DateTime? get dateUnpinned => _dateUnpinned;
@@ -132,22 +160,26 @@ class Pin {
   /// https://gateway.pinata.cloud/ipfs/ADDRESS
   /// ```
   String get contentURL {
-    return '$GatewayCloudURL/ipfs/$address';
+    //...
+    if (Pinata._gatewayID == null) {
+      return '$GatewayCloudURL/ipfs/$address';
+    }
+    return '$DedicatedGatewayURL/ipfs/$address';
   }
 
-  /// Retrieve String version of content from IPFS via
-  /// Pinata Gateway. Recover pin content as plain text.
-  /// <br/><br/>
+  /// Retrieve String version of content from IPFS
+  /// via Pinata Gateway. Recover pin content as plain
+  /// text. <br/><br/>
   ///
   /// ```dart
-  /// var pin = await pinata.loadPin('ADDRESS');
+  /// var pin = await pinata.getPin('ADDRESS');
   /// return await pin.contentJson;
   /// ```
   Future<String> get contentBody async {
     //...
     final response = await get(
       Uri.parse(contentURL),
-      headers: _anchor,
+      headers: _host,
     );
     if (response.statusCode != 200) {
       throw PinataException._(
@@ -164,7 +196,7 @@ class Pin {
   /// <br/><br/>
   ///
   /// ```dart
-  /// var pin = await pinata.loadPin('ADDRESS');
+  /// var pin = await pinata.getPin('ADDRESS');
   /// return await pin.contentJson;
   /// ```
   Future<Map<String, Object?>> get contentJson async {
@@ -172,7 +204,7 @@ class Pin {
     final q = RegExp(r'^"|"$');
     final response = await get(
       Uri.parse(contentURL),
-      headers: _anchor,
+      headers: _host,
     );
     if (response.statusCode != 200) {
       throw PinataException._(
@@ -196,7 +228,7 @@ class Pin {
   /// <br/><br/>
   ///
   /// ```dart
-  /// var pin = await pinata.loadPin('ADDRESS');
+  /// var pin = await pinata.getPin('ADDRESS');
   /// return await pin.contentArray;
   /// ```
   Future<Iterable<Object?>> get contentArray async {
@@ -208,29 +240,21 @@ class Pin {
     return [];
   }
 
-  /// Retrieve bytes version of content from IPFS via
-  /// Pinata Gateway. Recovery callback for [pinBytes]
-  /// as in [_PinataAPI.pinBytes]. Also applies to files
-  /// [_PinataAPI.pinFile] and [_PinataAPI.pinDirectory]
-  /// <br/><br/>
+  /// Retrieve bytes details of content from IPFS
+  /// via Pinata Gateway. Applies to all pinning
+  /// services except [_PinataAPI.pinFromAddress]
+  /// in some peculiar cases. Contents are returned
+  /// as [PinSchema] which can be be either a
+  /// folder or a file Skeleton. <br/><br/>
   ///
   /// ```dart
-  /// var pin = await pinata.loadPin('ADDRESS');
-  /// return await pin.contentBytes;
+  /// var pin = await pinata.getPin('ADDRESS');
+  /// return await pin.content;
   /// ```
-  Future<Uint8List> get contentBytes async {
+  Future<PinSchema> get content async {
     //...
-    final response = await get(
-      Uri.parse(contentURL),
-      headers: _anchor,
-    );
-    if (response.statusCode != 200) {
-      throw PinataException._(
-        statusCode: response.statusCode,
-        reasonPhrase: response.reasonPhrase,
-      );
-    }
-    return response.bodyBytes;
+    final api = Pinata.login(login: _host);
+    return await schema.load(contentURL, api);
   }
 
   /// Get meta data at [key]. If meta does not
@@ -239,7 +263,7 @@ class Pin {
   /// <br/><br/>
   ///
   /// ```dart
-  /// var pin = await pinata.loadPin('ADDRESS');
+  /// var pin = await pinata.getPin('ADDRESS');
   /// return pin['name_id'];
   /// ```
   Object? operator [](String key) => _meta[key];
@@ -251,7 +275,7 @@ class Pin {
   /// <br/><br/>
   ///
   /// ```dart
-  /// var pin = await pinata.loadPin('ADDRESS');
+  /// var pin = await pinata.getPin('ADDRESS');
   /// return pin['name_id'];
   /// ```
   T? metaAt<T>(String key) {
@@ -268,21 +292,29 @@ class Pin {
     //...
     final pin = await api.getPin(address);
     if (pin.serial != serial) return false;
-    _anchor
-      ..clear()
-      ..addAll(api._login);
+    (_host..clear()).addAll(api._login);
     return true;
+  }
+
+  /// Download pin content to [dir]. File is stored
+  /// in [dir] path under a sub folder named after
+  /// `ipfs-ADDRESS/NAME`. <br/><br/>
+  /// ```url
+  /// DIRECTORY/ipfs-wr5ndj3yHK8nI08eyJGF8DG/book.png
+  /// ```
+  Future<Files> downloadTo(Directory dir) async {
+    //...
+    return await schema.save(address, dir);
   }
 
   /// Publish meta changes to local and remote
   /// nodes where pin is hosted on IPFS network.
   /// If successful, pin meta and name will be
   /// updated bot locally and across it's remote
-  /// host nodes.
-  /// <br/><br/>
+  /// host nodes. <br/><br/>
   ///
   /// ```dart
-  /// var pin = await pinata.loadPin('ADDRESS');
+  /// var pin = await pinata.getPin('ADDRESS');
   /// pin.update(name: 'MY NEW PIN MAME');
   /// ```
   Future<bool> updateMeta({
@@ -307,7 +339,7 @@ class Pin {
       Uri.parse('$APICloudURL/pinning/hashMetadata'),
     );
     request.headers.addAll({
-      ..._anchor,
+      ..._host,
       'Content-Type': 'application/json',
     });
     request.body = json.encode(payload);
@@ -328,11 +360,10 @@ class Pin {
   /// on IPFS network and can be re-pinned via
   /// [_PinataAPI.pinFromAddress] using [address]. If
   /// successful, [dateUnpinned] will be set to when
-  /// future returns true.
-  /// <br/><br/>
+  /// future returns true. <br/><br/>
   ///
   /// ```dart
-  /// var pin = await pinata.loadPin('ADDRESS');
+  /// var pin = await pinata.getPin('ADDRESS');
   /// pin.unpin();
   /// ```
   Future<bool> unpin() async {
@@ -342,7 +373,7 @@ class Pin {
       'DELETE',
       Uri.parse('$APICloudURL/pinning/unpin/$address'),
     );
-    request.headers.addAll(_anchor);
+    request.headers.addAll(_host);
     final overload = await request.send();
     final response = await Response.fromStream(overload);
     if (response.statusCode != 200) {
@@ -361,4 +392,41 @@ class Pin {
   }
 }
 
-enum PinStatus { all, pinned, unpinned }
+/// ## Pin Status
+/// Whether a pin is currently pinned or unpinned
+/// Also used by Pinata api keys to query pins and
+/// pin jobs. See [_PinataAPI.queryPins]
+/// <br/><br/>
+///
+/// ```dart
+/// var pinStatus = PinStatus.all;
+/// ```
+enum PinStatus {
+  //...Enumerations
+  /// Applicable only in query usage of this api.
+  /// Queries all available pins. Both pinned and
+  /// unpinned
+  all('all'),
+
+  /// Signifies that a pin is currently pinned ie.
+  /// [Pin.dateUnpinned] is null. See [Pin.status]
+  /// <br/><br/>
+  /// Queries all pinned pins when used in Pinata api
+  /// [_PinataAPI.queryPins].
+  pinned('pinned'),
+
+  /// Signifies that a pin is currently pinned ie.
+  /// [Pin.dateUnpinned] is non null. See [Pin.status]
+  /// <br/><br/>
+  /// Queries all unpinned pins when used in Pinata api
+  /// [_PinataAPI.queryPins].
+  unpinned('unpinned');
+
+  //...Fields
+  final String code;
+
+  const PinStatus(this.code);
+
+  @override
+  String toString() => code;
+}

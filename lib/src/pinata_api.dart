@@ -1,13 +1,5 @@
 part of pinata;
 
-/// ## IPFS API Cloud URL
-// ignore: constant_identifier_names
-const APICloudURL = 'https://api.pinata.cloud';
-
-/// ## IPFS Gateway Cloud URL
-// ignore: constant_identifier_names
-const GatewayCloudURL = 'https://gateway.pinata.cloud';
-
 /// ## Pinata API KEY
 /// The interface for communicating with Pinata IPFS
 /// Gateway API. Can be used to pin and unpin files
@@ -345,8 +337,7 @@ class _PinataAPI {
     final mnQ = minByte != null ? '&pinSizeMin=$minByte' : '';
     final mxQ = minByte != null ? '&pinSizeMax=$maxByte' : '';
     final pQ = status != null ? '&status=${status.name}' : '';
-    final metaQ = queries.map((e) => '$e').join();
-    final query = '$quote$hQ$nQ$pQ$mnQ$mxQ$plQ$poQ$metaQ';
+    final query = '$quote$hQ$nQ$pQ$mnQ$mxQ$plQ$poQ';
     final response = await get(
       Uri.parse('$APICloudURL/data/pinList$query'),
       headers: _login,
@@ -441,7 +432,11 @@ class _PinataAPI {
     name ??= file.uri.pathSegments.last;
     final metadata = {
       "name": name,
-      "keyvalues": meta?.en ?? {},
+      "keyvalues": <String, dynamic>{
+        '...skeleton.io': [name].join(','),
+        '...format.io': 'plain',
+        ..._en(meta),
+      },
     };
     final payload = {
       'pinataOptions': '{"cidVersion": 1}',
@@ -451,10 +446,10 @@ class _PinataAPI {
       'POST', //...Pin File to Pinata.
       Uri.parse('$APICloudURL/pinning/pinFileToIPFS'),
     );
-    final mf = MultipartFile.fromPath("file", file.path);
-    request.headers.addAll(_login);
+    final multipart = MultipartFile.fromPath("file", file.path);
     request.fields.addAll(payload);
-    request.files.add(await mf);
+    request.headers.addAll(_login);
+    request.files.add(await multipart);
     final overload = await request.send();
     final response = await Response.fromStream(overload);
     if (response.statusCode != 200) {
@@ -489,32 +484,38 @@ class _PinataAPI {
     Map<String, Object>? meta,
   }) async {
     //...
+    final schema = <String>[];
     name ??= directory.uri.pathSegments.last;
+    final request = MultipartRequest(
+      'POST',
+      Uri.parse('$APICloudURL/pinning/pinFileToIPFS'),
+    );
+    directory.list(recursive: true).listen((file) {
+      final String path;
+      final multipart = MultipartFile.fromBytes(
+        "file",
+        File(file.path).readAsBytesSync(),
+        filename: path = file.path //
+            .replaceFirst(directory.parent.path, '')
+            .replaceFirst(RegExp(r'^[/\\]'), '')
+            .replaceAll(RegExp(r'\\'), '/'),
+      );
+      schema.add(path);
+      request.files.add(multipart);
+    }).asFuture();
     final metadata = {
       "name": name,
-      "keyvalues": meta?.en ?? {},
+      "keyvalues": <String, dynamic>{
+        '...skeleton.io': schema.join(','),
+        ..._en(meta),
+      },
     };
     final payload = {
       'pinataOptions': '{"cidVersion": 1}',
       'pinataMetadata': json.encode(metadata),
     };
-    final request = MultipartRequest(
-      'POST',
-      Uri.parse('$APICloudURL/pinning/pinFileToIPFS'),
-    );
     request.headers.addAll(_login);
     request.fields.addAll(payload);
-    directory.list(recursive: true).listen((file) {
-      final mf = MultipartFile.fromBytes(
-        "file",
-        File(file.path).readAsBytesSync(),
-        filename: file.path //
-            .replaceFirst(directory.parent.path, '')
-            .replaceFirst(RegExp(r'^[/\\]'), '')
-            .replaceAll(RegExp(r'\\'), '/'),
-      );
-      request.files.add(mf);
-    }).asFuture();
     final overload = await request.send();
     final response = await Response.fromStream(overload);
     if (response.statusCode != 200) {
@@ -551,7 +552,10 @@ class _PinataAPI {
     //...
     final metadata = {
       "name": name,
-      "keyvalues": meta?.en ?? {},
+      "keyvalues": <String, dynamic>{
+        '...skeleton.io': [name].join(','),
+        ..._en(meta),
+      },
     };
     final payload = {
       'pinataOptions': '{"cidVersion": 1}',
@@ -604,7 +608,10 @@ class _PinataAPI {
     assert(map.isNotEmpty);
     final metadata = {
       "name": name,
-      "keyvalues": meta?.en ?? {},
+      "keyvalues": <String, dynamic>{
+        '...skeleton.io': [name].join(','),
+        ..._en(meta),
+      },
     };
     final payload = {
       'pinataOptions': '{"cidVersion": 1}',
@@ -727,10 +734,7 @@ class _PinataAPI {
     final payload = {
       'keyName': name,
       ...(maxUses != null ? {'maxUses': maxUses} : {}),
-      'permissions': KeyAccess._(
-        access.map((e) => '$e'),
-        'Permissions',
-      )._toJson(),
+      'permissions': access.toJson(),
     };
     final request = Request(
       'POST',
@@ -760,4 +764,19 @@ class _PinataAPI {
           'login': _login,
         })})';
   }
+}
+
+/// ## IPFS API Cloud URL
+// ignore: constant_identifier_names
+const APICloudURL = 'https://api.pinata.cloud';
+
+/// ## IPFS Gateway Cloud URL
+// ignore: constant_identifier_names
+const GatewayCloudURL = 'https://gateway.pinata.cloud';
+
+/// ## IPFS Dedicated Gateway Cloud URL
+// ignore: non_constant_identifier_names
+String get DedicatedGatewayURL {
+  final gatewayID = Pinata._gatewayID ?? '';
+  return 'https://$gatewayID.myPinata.cloud';
 }

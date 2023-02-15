@@ -39,15 +39,19 @@ class Pin {
 
   factory Pin._fromJson(data) {
     //...
+    final x = DateTime.now();
+    final iso1 = data['date_pinned'] ?? '';
+    final iso2 = data['date_unpinned'] ?? '';
     assert(data is Map<String, dynamic>);
+    //...
     return Pin._(
-      name: data['metadata']['name'],
-      serial: data['id'],
-      address: data['ipfs_pin_hash'],
-      datePinned: DateTime.parse(data['date_pinned']),
-      dateUnpinned: DateTime.tryParse(data['date_unpinned'] ?? ''),
-      meta: _de(data['metadata']['keyvalues']),
-      regions: data['regions'],
+      name: data['metadata']['name'] ?? 'No name set',
+      serial: data['id'] ?? 'invalid',
+      address: data['ipfs_pin_hash'] ?? 'invalid',
+      datePinned: DateTime.tryParse(iso1) ?? x,
+      dateUnpinned: DateTime.tryParse(iso2),
+      meta: _de(data['metadata']['keyvalues'] ?? {}),
+      regions: data['regions'] ?? [],
       host: Map<String, String>.from(data['cfx'] ?? {}),
     );
   }

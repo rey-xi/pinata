@@ -31,13 +31,16 @@ class PinJob {
 
   factory PinJob._fromJson(data) {
     //...
+    final x = DateTime.now();
+    final iso = data['date_queued'] ?? '';
     assert(data is Map<String, dynamic>);
+    //...
     return PinJob._(
-      serial: data['id'],
-      status: _PinJobStatus.from(data['status']),
+      serial: data['id'] ?? 'invalid',
+      status: PinJobStatus.from(data['status']),
       name: data['name'] ?? '',
       address: data['ipfs_pin_hash'],
-      dateQueued: DateTime.parse(data['date_queued']),
+      dateQueued: DateTime.tryParse(iso) ?? x,
       meta: data['keyvalues']?.de ?? {},
       hostNodes: data['host_nodes'] ?? [],
       pinPolicy: data['pin_policy'] ?? '',
@@ -79,39 +82,63 @@ class PinJob {
   }
 }
 
+/// ## Pin Status
+/// Describes a typical 'PinJob` phase status from
+/// `Prechecking` to `Searching` then to `Retrieving`.
+/// Also contains error phases like `Expired`, and
+/// `InvalidObject` among few others.
+/// <br/><br/>
+///
+/// Applicable only to [_PinataAPI.pinFromAddress].
 enum PinJobStatus {
-  preChecking,
-  searching,
-  retrieving,
-  expired,
-  overFreeLimit,
-  overMaxSize,
-  invalidObject,
-  badHostNode
-}
+  //...Enumerations
+  /// Prior pin `searching` starts
+  preChecking('prechecking'),
 
-extension _PinJobStatus on PinJobStatus {
-  //...Getters
-  String get code => {
-        PinJobStatus.preChecking: 'prechecking',
-        PinJobStatus.searching: 'searching',
-        PinJobStatus.retrieving: 'retrieving',
-        PinJobStatus.expired: 'expired',
-        PinJobStatus.overFreeLimit: 'over_free_limit',
-        PinJobStatus.overMaxSize: 'over_max_size',
-        PinJobStatus.invalidObject: 'invalid_object',
-        PinJobStatus.badHostNode: 'bad_host_node',
-      }[this]!;
-  //...Methods
-  static PinJobStatus from(String? code) => {
-        null: PinJobStatus.preChecking,
-        'prechecking': PinJobStatus.preChecking,
-        'searching': PinJobStatus.searching,
-        'retrieving': PinJobStatus.retrieving,
-        'expired': PinJobStatus.expired,
-        'over_free_limit': PinJobStatus.overFreeLimit,
-        'over_max_size': PinJobStatus.overMaxSize,
-        'invalid_object': PinJobStatus.invalidObject,
-        'bad_host_node': PinJobStatus.badHostNode,
-      }[code]!;
+  /// Pinata Cloud Gateway now searching for the most
+  /// accessible host node of your Pin
+  searching('searching'),
+
+  /// Pinata Cloud Gateway now retrieving your pin
+  /// from one of it's valid host nodes.
+  retrieving('retrieving'),
+
+  /// Pinata Cloud Gateway has stopped pinning as
+  /// pinning timeout has been exceeded - 1 day.
+  expired('expired'),
+
+  /// Pinata Cloud Gateway stopped pinning as more
+  /// pins requires a paid plan or renewal.
+  overFreeLimit('over_free_limit'),
+
+  /// Pinata Cloud Gateway stopped pinning because
+  /// you've exceeded your pin quota.
+  overMaxSize('over_max_size'),
+
+  /// Pinata Cloud could not locate or parse your
+  /// specified address
+  invalidObject('invalid_object'),
+
+  /// Pinata Cloud could not resolve specified host
+  /// nodes.
+  badHostNode('bad_host_node');
+
+  //...Fields
+  final String code;
+
+  const PinJobStatus(this.code);
+
+  static PinJobStatus from(String? code) {
+    return {
+      null: PinJobStatus.preChecking,
+      'prechecking': PinJobStatus.preChecking,
+      'searching': PinJobStatus.searching,
+      'retrieving': PinJobStatus.retrieving,
+      'expired': PinJobStatus.expired,
+      'over_free_limit': PinJobStatus.overFreeLimit,
+      'over_max_size': PinJobStatus.overMaxSize,
+      'invalid_object': PinJobStatus.invalidObject,
+      'bad_host_node': PinJobStatus.badHostNode,
+    }[code]!;
+  }
 }

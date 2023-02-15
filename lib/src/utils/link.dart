@@ -28,11 +28,14 @@ class PinLink {
 
   factory PinLink._fromJson(data) {
     //...
+    final x = DateTime.now();
+    final iso = data['Timestamp'] ?? '';
     assert(data is Map<String, dynamic>);
+    //...
     return PinLink._(
-      byteSize: data['PinSize'],
-      address: data['IpfsHash'],
-      stamp: DateTime.parse(data['Timestamp']),
+      byteSize: data['PinSize'] ?? 0,
+      address: data['IpfsHash'] ?? 'invalid',
+      stamp: DateTime.tryParse(iso) ?? x,
       isDuplicate: data['isDuplicate'],
     );
   }
@@ -46,6 +49,7 @@ class PinLink {
   /// var key = Pinata.parse('SOURCE');
   /// ```
   factory PinLink.parse(String source) {
+    //...
     source = source.replaceAll(RegExp(r'\s+'), '');
     final validKey = RegExp(r'^PinLink\((.+)\)$');
     final match = validKey.matchAsPrefix(source);

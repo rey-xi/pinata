@@ -430,6 +430,8 @@ class _PinataAPI {
   }) async {
     //...
     name ??= file.uri.pathSegments.last;
+    assert(name.isNotEmpty);
+    //...
     final metadata = {
       "name": name,
       "keyvalues": <String, dynamic>{
@@ -486,6 +488,8 @@ class _PinataAPI {
     //...
     final schema = <String>[];
     name ??= directory.uri.pathSegments.last;
+    assert(name.isNotEmpty);
+    //...
     final request = MultipartRequest(
       'POST',
       Uri.parse('$APICloudURL/pinning/pinFileToIPFS'),
@@ -550,6 +554,8 @@ class _PinataAPI {
     Map<String, Object>? meta,
   }) async {
     //...
+    assert(name.isNotEmpty);
+    //...
     final metadata = {
       "name": name,
       "keyvalues": <String, dynamic>{
@@ -606,6 +612,7 @@ class _PinataAPI {
   }) async {
     //...
     assert(map.isNotEmpty);
+    assert(name.isNotEmpty);
     final metadata = {
       "name": name,
       "keyvalues": <String, dynamic>{
@@ -616,7 +623,7 @@ class _PinataAPI {
     final payload = {
       'pinataOptions': '{"cidVersion": 1}',
       'pinataMetadata': json.encode(metadata),
-      'pinataContent': json.encode(map.en),
+      'pinataContent': json.encode(_en(map)),
     };
     final response = await post(
       Uri.parse('$APICloudURL/pinning/pinJSONToIPFS'),
@@ -652,6 +659,9 @@ class _PinataAPI {
     required String name,
     Map<String, Object>? meta,
   }) {
+    //...
+    assert(name.isNotEmpty);
+    //...
     return pinJson(
       {'array*': array},
       name: name,

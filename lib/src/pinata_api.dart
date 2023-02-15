@@ -148,7 +148,8 @@ class _PinataAPI {
     //...
     final response = await get(
       Uri.parse('$APICloudURL/data/pinList'
-          '?includeCount=false&pageLimit=50'),
+          '?includeCount=false&pageLimit=50'
+          '&status=pinned'),
       headers: _login,
     );
     if (response.statusCode != 200) {

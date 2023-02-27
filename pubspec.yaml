@@ -1,6 +1,6 @@
 name: pinata
 description: Perfect end point you need to use IPFS via Pinata Gateway
-version: 0.0.1+5
+version: 0.0.1+7
 # repository: https://github.com/my_org/my_repo
 
 environment:

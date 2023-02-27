@@ -181,15 +181,25 @@ class Pin {
   /// ```
   Future<String> get contentBody async {
     //...
+    final q = RegExp(r'^"|"$');
     final response = await get(
       Uri.parse(contentURL),
       headers: _host,
     );
+    //...
     if (response.statusCode != 200) {
       throw PinataException._(
         statusCode: response.statusCode,
         reasonPhrase: response.reasonPhrase,
       );
+    }
+    var data = json.decode(response.body);
+    if (data is String) {
+      data = json.decode(data.replaceAll(q, ''));
+    }
+    if (data is Map) {
+      final x = Map<String, Object?>.from(_de(data));
+      return x.toString();
     }
     return response.body;
   }

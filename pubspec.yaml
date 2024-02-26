@@ -4,18 +4,17 @@ version: 0.0.1+7
 # repository: https://github.com/my_org/my_repo
 
 environment:
-  sdk: '>=2.18.6 <3.0.0'
-  flutter: ">=1.17.0"
+    sdk: ">=2.18.6 <3.0.0"
+    flutter: ">=1.17.0"
 
 dependencies:
-  flutter:
-    sdk: flutter
+    flutter:
+        sdk: flutter
 
-  http: ^0.13.5
-  qp_xt: ^0.0.2+3
+    http: ^1.2.0
+    qp_xt: ^0.0.2+3
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^2.0.1
-
+    flutter_test:
+        sdk: flutter
+    flutter_lints: ^2.0.1
